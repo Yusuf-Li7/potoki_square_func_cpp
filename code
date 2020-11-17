@@ -1,0 +1,63 @@
+// 30. Задача для агронома.Председатель дачного кооператива Сидоров
+// В.И.получил указание, что в связи с составлением единого земельного
+// кадастра, необходимо представить справку о площади занимаемых земель.
+// Известно, что территория с запада и востока параллельна меридианам, на
+// севере ограничены параллелью, а с юга выходят к реке, описываемой
+// функцией f(x).Требуется создать многопоточное приложение, вычисляющее
+// площадь угодий методом адаптивной квадратуры.При решении
+// использовать парадигму рекурсивного параллелизма.Замечание: кривизну
+// Земли из - за малой занимаемой площади не учитывать.
+
+#include "pch.h"
+#include <iostream>
+#include <cmath>
+#include <locale>
+#include <thread>
+#include <ctime>
+#include <stdio.h>
+#include <stdlib.h>
+#include <iomanip>
+#include <limits>
+#include "windows.h"
+#include <string>
+
+using namespace std;
+
+double f(double x) {
+	return abs(sin(x) - 3);
+}
+
+void quad(double left, double right, double fleft, double fright, double lrarea, double &sum) {
+	double mid = (left + right) / 2.0;
+	double fmid = f(mid);
+	double larea = (fleft + fmid) * (mid - left) / 2.0;
+	double rarea = (fmid + fright) * (right - mid) / 2.0;
+	if (abs((larea + rarea) - lrarea) > DBL_EPSILON) {
+		thread *thr[2];
+		thr[0] = new std::thread{ quad, left, mid, fleft, fmid, larea, ref(larea) };
+		thr[1] = new std::thread{ quad, mid, right, fmid, fright, larea, ref(rarea) };
+		//thr[0]->join();
+		//thr[1]->join();
+		//delete thr[0];
+		//delete thr[1];
+	}
+	sum = larea + rarea;
+}
+
+int main()
+{
+	setlocale(LC_CTYPE, "Russian");
+	double a = 0, b = 0;
+	cout << "f(x) = sin(x) - 3\nВведите левую и правую границы а и b соотвественно\n";
+	cout << "a = ";
+	cin >> a;
+	cout << "b = ";
+	cin >> b;
+	if (a > b)
+		swap(a, b);
+	double sum = 0;
+	double s = (f(a) + f(b)) * (b - a) * 0.5;
+	quad(a, b, f(a), f(b), s, ref(sum));
+	cout << "\nПлощадь = " << sum << "\n";
+	return 0;
+}
